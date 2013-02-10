@@ -92,22 +92,37 @@
       <DelegateStubsFile>$(DelegateStubsFileBase).cs</DelegateStubsFile>
       <DelegateStubsCode>
         <![CDATA[
-using System%3B
-using System.Reflection%3B
-using System.Runtime.Serialization%3B
+using System;
+using System.Reflection;
+//using System.Runtime.Serialization;
 
 namespace Ark {
-    public interface IDelegate {
-        object Clone()%3B
-        object DynamicInvoke(params object[] args)%3B
-        Delegate[] GetInvocationList()%3B
-        void GetObjectData(SerializationInfo info, StreamingContext context)%3B
-        MethodInfo Method { get%3B }
-        Object Target { get%3B }
+    public abstract class IDelegate {
+        public object Clone() { throw new NotImplementedException(); }
+        public object DynamicInvoke(params object[] args) { throw new NotImplementedException(); }
+        public override bool Equals(object obj) { throw new NotImplementedException(); }
+        public override int GetHashCode() { throw new NotImplementedException(); }
+        public IDelegate[] GetInvocationList() { throw new NotImplementedException(); }
+        //public void GetObjectData(SerializationInfo info, StreamingContext context) { throw new NotImplementedException(); } //Not supported in some portable subsets
+        public override string ToString() { throw new NotImplementedException(); }
+#if !NETFX_CORE
+        public MethodInfo Method { get { throw new NotImplementedException(); } }
+#endif
+        public Object Target { get { throw new NotImplementedException(); } }
+        public static bool operator ==(IDelegate d1, IDelegate d2) { throw new NotImplementedException(); }
+        public static bool operator !=(IDelegate d1, IDelegate d2) { throw new NotImplementedException(); }
+        //protected virtual IDelegate CombineImpl(IDelegate d) { throw new NotImplementedException(); }
+        //protected virtual Object DynamicInvokeImpl(Object[] args) { throw new NotImplementedException(); }
+        //protected virtual MethodInfo GetMethodImpl() { throw new NotImplementedException(); }
+        //protected virtual Delegate RemoveImpl(IDelegate d) { throw new NotImplementedException(); }
+        public static IDelegate Combine(params IDelegate[] delegates) { throw new NotImplementedException(); }
+        public static IDelegate Combine(IDelegate a, IDelegate b) { throw new NotImplementedException(); }
+        public static IDelegate Remove(IDelegate source, IDelegate value) { throw new NotImplementedException(); }
+        public static IDelegate RemoveAll(IDelegate source, IDelegate value) { throw new NotImplementedException(); }
     }
 
-    public interface IDelegate<TDelegate> : IDelegate {
-        TDelegate Invoke { get%3B }
+    public abstract class IDelegate<TDelegate> : IDelegate {
+        public TDelegate Invoke { get { throw new NotImplementedException(); } }
     }
 }
         ]]>
@@ -118,24 +133,87 @@ namespace Ark {
       <DelegateStubsFile>$(DelegateStubsFileBase).vb</DelegateStubsFile>
       <DelegateStubsCode>
         <![CDATA[
-Imports System
 Imports System.Reflection
-Imports System.Runtime.Serialization
+'Imports System.Runtime.Serialization;
 
-Namespace Ark
-	Public Interface IDelegate
-		Function Clone() As Object
-		Function DynamicInvoke(ParamArray args As Object()) As Object
-		Function GetInvocationList() As Delegate()
-		Sub GetObjectData(info As SerializationInfo, context As StreamingContext)
-		ReadOnly Property Method() As MethodInfo
-		ReadOnly Property Target() As Object
-	End Interface
+Namespace Global.Ark
+    Public MustInherit Class IDelegate
+        Public Function Clone() As Object
+            Throw New NotImplementedException()
+        End Function
+        Public Function DynamicInvoke(ParamArray args As Object()) As Object
+            Throw New NotImplementedException()
+        End Function
+        Public Overrides Function Equals(obj As Object) As Boolean
+            Throw New NotImplementedException()
+        End Function
+        Public Overrides Function GetHashCode() As Integer
+            Throw New NotImplementedException()
+        End Function
+        Public Function GetInvocationList() As [IDelegate]()
+            Throw New NotImplementedException()
+        End Function
+        ''Not supported in some portable subsets
+        'Public Sub GetObjectData(info As SerializationInfo, context As StreamingContext)
+        '    Throw New NotImplementedException()
+        'End Sub
+        Public Overrides Function ToString() As String
+            Throw New NotImplementedException()
+        End Function
+#If Not NETFX_CORE Then
+        Public ReadOnly Property Method() As MethodInfo
+            Get
+                Throw New NotImplementedException()
+            End Get
+        End Property
+#End If
+        Public ReadOnly Property Target() As Object
+            Get
+                Throw New NotImplementedException()
+            End Get
+        End Property
+        Public Shared Operator =(d1 As IDelegate, d2 As IDelegate) As Boolean
+            Throw New NotImplementedException()
+        End Operator
+        Public Shared Operator <>(d1 As IDelegate, d2 As IDelegate) As Boolean
+            Throw New NotImplementedException()
+        End Operator
 
-	Public Interface IDelegate(Of TDelegate)
-		Inherits IDelegate
-		ReadOnly Property Invoke() As TDelegate
-	End Interface
+        'Protected Overridable Function CombineImpl(d As IDelegate) As IDelegate
+        '    Throw New NotImplementedException()
+        'End Function
+        'Protected Overridable Function DynamicInvokeImpl(args As Object()) As Object
+        '    Throw New NotImplementedException()
+        'End Function
+        'Protected Overridable Function GetMethodImpl() As MethodInfo
+        '    Throw New NotImplementedException()
+        'End Function
+        'Protected Overridable Function RemoveImpl(d As IDelegate) As [Delegate]
+        '    Throw New NotImplementedException()
+        'End Function
+
+        Public Shared Function Combine(ParamArray delegates As IDelegate()) As IDelegate
+            Throw New NotImplementedException()
+        End Function
+        Public Shared Function Combine(a As IDelegate, b As IDelegate) As IDelegate
+            Throw New NotImplementedException()
+        End Function
+        Public Shared Function Remove(source As IDelegate, value As IDelegate) As IDelegate
+            Throw New NotImplementedException()
+        End Function
+        Public Shared Function RemoveAll(source As IDelegate, value As IDelegate) As IDelegate
+            Throw New NotImplementedException()
+        End Function
+    End Class
+
+    Public MustInherit Class IDelegate(Of TDelegate)
+        Inherits IDelegate
+        Public ReadOnly Property Invoke() As TDelegate
+            Get
+                Throw New NotImplementedException()
+            End Get
+        End Property
+    End Class
 End Namespace
         ]]>
       </DelegateStubsCode>
@@ -145,7 +223,7 @@ End Namespace
 
     <WriteLinesToFile Condition = "!Exists('$(DelegateStubsFile)') and '$(DelegateStubsFile)' != ''"
       File="$(DelegateStubsFile)"
-      Lines="$(DelegateStubsCode)"/>
+      Lines="$([MSBuild]::Escape($(DelegateStubsCode)))"/>
 
     <ItemGroup Condition="'$(DelegateStubsFile)' != ''">
       <Compile Include="$(DelegateStubsFile)" />
