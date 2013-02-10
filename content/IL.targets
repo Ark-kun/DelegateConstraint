@@ -4,7 +4,13 @@
       <Output TaskParameter="Path" PropertyName="FrameworkSdkPath" />
     </GetFrameworkSdkPath>
     <PropertyGroup>
-      <ILDasmCommand>"$(FrameworkSdkPath)bin\NETFX 4.0 Tools\ildasm.exe" /nobar /linenum /output:"$(ILDasmOuputFile)" $(ILDasmInputFile)</ILDasmCommand>
+      <ILDasmPath>$(FrameworkSdkPath)bin\NETFX 4.0 Tools\ildasm.exe</ILDasmPath>
+    </PropertyGroup>
+    <PropertyGroup Condition = "! Exists( '$(ILDasmPath)' ) ">
+      <ILDasmPath>$(FrameworkSdkPath)bin\ildasm.exe</ILDasmPath>
+    </PropertyGroup>
+    <PropertyGroup>
+      <ILDasmCommand>"$(ILDasmPath)" /nobar /linenum /output:"$(ILDasmOuputFile)" $(ILDasmInputFile)</ILDasmCommand>
     </PropertyGroup>
     <Exec Command="$(ILDasmCommand)" />
     <ItemGroup>
