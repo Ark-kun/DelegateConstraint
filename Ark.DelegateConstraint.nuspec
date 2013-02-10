@@ -2,26 +2,23 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Ark.DelegateConstraint</id>
-        <version>0.1.11</version>
+        <version>0.1.1</version>
         <title>DelegateConstraint</title>
         <authors>Ark-kun</authors>
         <owners />
+        <projectUrl>https://github.com/Ark-kun/DelegateConstraint</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>This package ultimately lets you constrain generic type parameters to the Delegate type. Just replace the problematic constraints and types with the Ark.IDelegate stubs which are wiped away without a trace after the assembly is compiled.
+        <description>This package ultimately lets you constrain generic type parameters to the `System.Delegate` type. Just replace the problematic constraints and types with the `Ark.IDelegate` stubs which are wiped away without a trace after the assembly is compiled.
 
-If you try to write
-class MyClass&lt;T&gt; where T : Delegate {}
-the C# compiler won't let you.
+If you try to write `class MyClass&lt;T&gt; where T : Delegate { }` the C# compiler won't let you.
 
-Install this package and replace that code with the following:
-class MyClass&lt;T&gt; where T : Ark.IDelegate {}
+Install this package and replace that code with `class MyClass&lt;T&gt; where T : Ark.IDelegate { }`.
 
-Instead of
-new MyClass&lt;Action&gt;() you'd need to write
-new MyClass&lt;Ark.IDelegate&lt;Action&gt;&gt;()
-so that the code compiles. Don't worry - all these stubs are removed from the resulting assembly.</description>
-        <summary>Allows constraining generic type parameters to the Delegate type.</summary>
-        <releaseNotes>First release of a first package.</releaseNotes>
+If you need to refer to a concrete delegate-constrained class in the same library then instead of `MyClass&lt;Action&gt;` you'd need to write `MyClass&lt;Ark.IDelegate&lt;Action&gt;&gt;` so that the code compiles. Don't worry - all these stubs are removed from the resulting assembly.</description>
+        <summary>Allows constraining generic type parameters to the Delegate type.  (Like `class MyClass&lt;T&gt; where T : Delegate { }`)</summary>
+        <releaseNotes>Stubs now have almost all Delegate methods (static methods, operators, etc).
+Changed stubs from interfaces to abstract classes without changing the class names.
+Improved ildasm.exe path detection.</releaseNotes>
         <tags>delegates generic constraints</tags>
     </metadata>
     <files>
