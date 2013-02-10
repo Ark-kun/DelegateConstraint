@@ -1,0 +1,58 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+  <Target Name="ILDasm" Inputs="$(ILDasmInputFile)" Outputs="$(ILDasmOuputFile)">
+    <GetFrameworkSdkPath>
+      <Output TaskParameter="Path" PropertyName="FrameworkSdkPath" />
+    </GetFrameworkSdkPath>
+    <PropertyGroup>
+      <ILDasmCommand>"$(FrameworkSdkPath)bin\NETFX 4.0 Tools\ildasm.exe" /nobar /linenum /output:"$(ILDasmOuputFile)" $(ILDasmInputFile)</ILDasmCommand>
+    </PropertyGroup>
+    <Exec Command="$(ILDasmCommand)" />
+    <ItemGroup>
+      <FileWrites Include="$(ILDasmOuputFile)" />
+      <FileWrites Include="$(ILResourceFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ILAsm" Inputs="@(ILAsmInputFiles)" Outputs="$(ILAsmOutputFile)">
+    <GetFrameworkPath>
+      <Output TaskParameter="Path" PropertyName="FrameworkPath" />
+    </GetFrameworkPath>
+    <PropertyGroup>
+      <ILAsmCommand>"$(FrameworkPath)\ilasm.exe" /nologo /quiet /output:$(ILAsmOutputFile)</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(FileAlignment)' != '' ">
+      <ILAsmCommand>$(ILAsmCommand) /alignment=$(FileAlignment)</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(BaseAddress)' != '' ">
+      <ILAsmCommand>$(ILAsmCommand) /base=$(BaseAddress)</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(OutputType)' == 'Library' ">
+      <ILAsmCommand>$(ILAsmCommand) /dll</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(DebugType)' == 'pdbonly' ">
+      <ILAsmCommand>$(ILAsmCommand) /pdb</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(DebugType)' == 'full' ">
+      <ILAsmCommand>$(ILAsmCommand) /debug</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Optimize)' == 'true' ">
+      <ILAsmCommand>$(ILAsmCommand) /optimize</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Platform)' == 'x64' ">
+      <ILAsmCommand>$(ILAsmCommand) /pe64 /x64</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Platform)' == 'Itanium' ">
+      <ILAsmCommand>$(ILAsmCommand) /pe64 /itanium</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">
+      <ILAsmCommand>$(ILAsmCommand) /key:"$(AssemblyOriginatorKeyFile)"</ILAsmCommand>
+    </PropertyGroup>
+    <PropertyGroup Condition=" Exists ( '$(ILResourceFile)' ) ">
+      <ILAsmCommand>$(ILAsmCommand) /resource:"$(ILResourceFile)"</ILAsmCommand>
+    </PropertyGroup>
+    <Exec Command="$(ILAsmCommand) @(ILAsmInputFiles->'&quot;%(FullPath)&quot;', ' ')" />
+    <ItemGroup>
+      <FileWrites Include="$(AssemblyReferencesCache)" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -1,0 +1,154 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="IL.targets" />
+
+  <!--
+  <Target Name="BeforeCompile" DependsOnTargets="GenerateDelegateStubs" />
+  <Target Name="AfterCompile" DependsOnTargets="InitialyzeILFilePaths;ILDasm;HackDelegateConstraints;ILAsm;HackTimestamps" />
+  -->  
+
+  <PropertyGroup>
+    <CompileDependsOn>
+      GenerateDelegateStubs;
+      $(CompileDependsOn);
+      InitialyzeILFilePaths;
+      ILDasm;
+      HackDelegateConstraints;
+      ILAsm;HackTimestamps
+    </CompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="InitialyzeILFilePaths">
+    <PropertyGroup>
+      <AssemblyFile>@(IntermediateAssembly->'%(FullPath)')</AssemblyFile>
+      <!--
+      <OriginalAssemblyFile>@(IntermediateAssembly->'%(RootDir)%(Directory)%(Filename).original%(Extension)')</OriginalAssemblyFile>
+      <TransformedAssemblyFile>$(AssemblyFile)</TransformedAssemblyFile>
+      -->
+
+      <AssemblyReferencesCache>@(IntermediateAssembly->'%(RootDir)%(Directory)DesignTimeResolveAssemblyReferencesInput.cache')</AssemblyReferencesCache>
+
+      <ILFile>@(IntermediateAssembly->'%(RootDir)%(Directory)%(Filename).il')</ILFile>
+      <TransformedILFile>@(IntermediateAssembly->'%(RootDir)%(Directory)%(Filename).modified.il')</TransformedILFile>
+      <ILResourceFile>@(IntermediateAssembly->'%(RootDir)%(Directory)%(Filename).res')</ILResourceFile>
+    </PropertyGroup>
+
+    <!--ILDasm-->
+    <PropertyGroup>
+      <ILDasmInputFile>$(AssemblyFile)</ILDasmInputFile>
+      <ILDasmOuputFile>$(ILFile)</ILDasmOuputFile>
+    </PropertyGroup>
+
+    <!--ILTransform-->
+    <PropertyGroup>
+      <ILTransformInputFile>$(ILFile)</ILTransformInputFile>
+      <ILTransformOuputFile>$(TransformedILFile)</ILTransformOuputFile>
+    </PropertyGroup>
+
+    <!--ILAsm-->
+    <ItemGroup>
+      <ILAsmInputFiles Include="$(TransformedILFile)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <ILAsmOutputFile>$(AssemblyFile)</ILAsmOutputFile>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="HackDelegateConstraints" Inputs="$(ILTransformInputFile)" Outputs="$(ILTransformOuputFile)">
+    <PropertyGroup>
+      <ILSource>$([System.IO.File]::ReadAllText($(ILTransformInputFile)))</ILSource>
+
+      <Pattern>.*callvirt\s+instance !0 class Ark\.IDelegate`1.*::get_Invoke\(\).*</Pattern>
+      <Replacement></Replacement>
+      <ILSource>$([System.Text.RegularExpressions.Regex]::Replace($(ILSource), $(Pattern), $(Replacement)))</ILSource>
+
+      <Pattern>class Ark\.IDelegate`1&lt;(([^&lt;&gt;]+|&lt;([^&lt;&gt;]+|&lt;[^&lt;&gt;]+&gt;)+&gt;)+)&gt;</Pattern>
+      <Replacement>$1</Replacement>
+      <ILSource>$([System.Text.RegularExpressions.Regex]::Replace($(ILSource), $(Pattern), $(Replacement)))</ILSource>
+
+      <Pattern>\(Ark\.IDelegate\)</Pattern>
+      <Replacement>([mscorlib]System.Delegate)</Replacement>
+      <ILSource>$([System.Text.RegularExpressions.Regex]::Replace($(ILSource), $(Pattern), $(Replacement)))</ILSource>
+      
+      <Pattern>(?s)\.class [^\n]* Ark\.IDelegate(`1)?.*} // end of class Ark\.IDelegate(`1)?</Pattern>
+      <Replacement></Replacement>
+      <ILSource>$([System.Text.RegularExpressions.Regex]::Replace($(ILSource), $(Pattern), $(Replacement)))</ILSource>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(ILTransformOuputFile)" Lines="$(ILSource)" Overwrite="true" />
+    <PropertyGroup>
+      <ILSource/>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="HackTimestamps" Inputs="$(TransformedAssemblyFile)" Outputs="$(OriginalAssemblyFile)">
+    <Touch Files="$(AssemblyFile);$(ILTransformInputFile);$(TransformedILFile)" />
+  </Target>
+
+  <Target Name="GenerateDelegateStubs">
+    <PropertyGroup>
+      <DelegateStubsFileBase>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'DelegateStubs'))</DelegateStubsFileBase>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+      <DelegateStubsFile>$(DelegateStubsFileBase).cs</DelegateStubsFile>
+      <DelegateStubsCode>
+        <![CDATA[
+using System%3B
+using System.Reflection%3B
+using System.Runtime.Serialization%3B
+
+namespace Ark {
+    public interface IDelegate {
+        object Clone()%3B
+        object DynamicInvoke(params object[] args)%3B
+        Delegate[] GetInvocationList()%3B
+        void GetObjectData(SerializationInfo info, StreamingContext context)%3B
+        MethodInfo Method { get%3B }
+        Object Target { get%3B }
+    }
+
+    public interface IDelegate<TDelegate> : IDelegate {
+        TDelegate Invoke { get%3B }
+    }
+}
+        ]]>
+      </DelegateStubsCode>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vbproj'">
+      <DelegateStubsFile>$(DelegateStubsFileBase).vb</DelegateStubsFile>
+      <DelegateStubsCode>
+        <![CDATA[
+Imports System
+Imports System.Reflection
+Imports System.Runtime.Serialization
+
+Namespace Ark
+	Public Interface IDelegate
+		Function Clone() As Object
+		Function DynamicInvoke(ParamArray args As Object()) As Object
+		Function GetInvocationList() As Delegate()
+		Sub GetObjectData(info As SerializationInfo, context As StreamingContext)
+		ReadOnly Property Method() As MethodInfo
+		ReadOnly Property Target() As Object
+	End Interface
+
+	Public Interface IDelegate(Of TDelegate)
+		Inherits IDelegate
+		ReadOnly Property Invoke() As TDelegate
+	End Interface
+End Namespace
+        ]]>
+      </DelegateStubsCode>
+    </PropertyGroup>
+
+    <Warning Condition="'$(DelegateStubsFile)' == ''" Text="Unrecognized project type. You would need to provide the delegate stub interfaces yourself."/>
+
+    <WriteLinesToFile Condition = "!Exists('$(DelegateStubsFile)') and '$(DelegateStubsFile)' != ''"
+      File="$(DelegateStubsFile)"
+      Lines="$(DelegateStubsCode)"/>
+
+    <ItemGroup Condition="'$(DelegateStubsFile)' != ''">
+      <Compile Include="$(DelegateStubsFile)" />
+    </ItemGroup>
+  </Target>
+</Project>
